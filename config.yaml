@@ -1,0 +1,231 @@
+
+experiment: experiment5
+run: run0
+embedding_network: densenet201
+seed: 14
+
+
+io_root: /home/uhlemeyer/outputs/metasegio
+weight_dir: /home/uhlemeyer/weights
+
+anom_threshold: 0.5
+
+#### Parameters for trainings
+num_workers: 10
+max_epochs: 70
+bs: 5
+
+#### datasets
+cityscapes:
+  _target_: src.datasets.cityscapes.Cityscapes
+  root: /home/datasets/cityscapes
+
+cityscapes_human:
+  _target_: src.datasets.cityscapes_human.Cityscapes
+  root: /home/datasets/cityscapes
+
+cityscapes_bus:
+  _target_: src.datasets.cityscapes_bus.Cityscapes
+  root:  /home/datasets/cityscapes
+
+cityscapes_human_bus_car:
+  _target_: src.datasets.cityscapes_human_bus_car.Cityscapes
+  root: /home/datasets/cityscapes
+
+cityscapes_human_car_fence_streetsign:
+  _target_: src.datasets.cityscapes_human_car_fence_streetsign.Cityscapes
+  root: /home/datasets/cityscapes
+
+a2d2:
+  _target_: src.datasets.a2d2.A2D2
+  root: /home/uhlemeyer/A2D2
+
+
+#### models
+deeplabv3plus_1:
+  _target_: src.models.deepv3.DeepWV3Plus
+  name: DeepLabv3plus
+  num_classes: 17
+
+deeplabv3plus_2:
+  _target_: src.models.deepv3.DeepWV3Plus
+  name: DeepLabv3plus
+  num_classes: 18
+
+deeplabv3plus_3a:
+  _target_: src.models.deepv3.DeepWV3Plus
+  name: DeepLabv3plus
+  num_classes: 19
+
+deeplabv3plus_4:
+  _target_: src.models.deepv3.DeepWV3Plus
+  name: DeepLabv3plus
+  num_classes: 19
+
+deeplabv3plus_5:
+  _target_: src.models.deepv3.DeepWV3Plus
+  name: DeepLabv3plus
+  num_classes: 15
+
+deeplabv3plus_6:
+  _target_: src.models.deepv3.DeepWV3Plus
+  name: DeepLabv3plus
+  num_classes: 14
+
+pspnet_3b:
+  _target_: src.models.pspnet.PSPNet
+  name: PSPNet
+  num_classes: 19
+
+
+### meta models
+gradient_boosting_1:
+  weights: meta/booster_cs_human.pickle.dat
+
+gradient_boosting_2:
+  weights: meta/booster_cs_bus.pickle.dat
+
+gradient_boosting_3a:
+  weights: meta/booster_a2d2_3a.pickle.dat
+
+gradient_boosting_3b:
+  weights: meta/booster_a2d2_splits_psp.pickle.dat
+
+gradient_boosting_4:
+  weights: meta/booster.pickle.dat
+
+gradient_boosting_5:
+  weights: meta/booster_cs_15.pickle.dat
+
+gradient_boosting_6:
+  weights: meta/booster_cs_14.pickle.dat
+
+### embedding networks
+densenet201:
+  _target_: src.models.embedding_networks.feature_densenet201
+
+resnet101:
+  _target_: src.models.embedding_networks.feature_resnet101
+
+vgg16:
+  _target_: src.models.embedding_networks.feature_vgg16
+
+
+
+#### experimental setup
+experiments:
+  experiment1:
+    dataset: cityscapes_human
+    split: test
+    train_dataset: cityscapes_human
+    train_split: train
+    model: deeplabv3plus_1
+    init_weights: initials/cityscapes_human_initial.pth
+    meta_model: gradient_boosting_1
+    pred_class_selection: [
+        # 0,  # road
+        # 1,  # sidewalk
+        # 2,  # building
+        3,  # wall
+        4,  # fence
+        # 5,  # pole
+        6,  # traffic light
+        7,  # traffic sign
+        # 8,  # vegetation
+        # 9,  # terrain
+        # 10,  # sky
+        11,  # car
+        12,  # truck
+        13,  # bus
+        14,  # train
+        15,  # motorcycle
+        16,  # bicycle
+    ]
+    eps: 2.5
+    min_samples: 10
+    k: 1
+  experiment2:
+    dataset: cityscapes_bus
+    split: test
+    train_dataset: cityscapes_bus
+    train_split: train
+    model: deeplabv3plus_2
+    init_weights: initials/cityscapes_bus_initial.pth
+    meta_model: gradient_boosting_2
+    pred_class_selection: [
+        # 0,  # road
+        # 1,  # sidewalk
+        # 2,  # building
+        3,  # wall
+        4,  # fence
+        # 5,  # pole
+        6,  # traffic light
+        7,  # traffic sign
+        # 8,  # vegetation
+        # 9,  # terrain
+        # 10,  # sky
+        11,  # person
+        12,  # rider
+        13,  # car
+        14,  # truck
+        15,  # train
+        16,  # motorcycle
+        17,  # bicycle
+    ]
+    eps: 2.5
+    min_samples: 10
+    k: 1
+  experiment3:
+    dataset: cityscapes_human_bus_car
+    split: test
+    train_dataset: cityscapes_human_bus_car
+    train_split: train
+    model: deeplabv3plus_5
+    init_weights: initials/best_checkpoint_ep177.pth
+    meta_model: gradient_boosting_5
+    eps: 1.75
+    min_samples: 10
+  experiment4a:
+    dataset: a2d2
+    split: test
+    train_dataset: cityscapes
+    train_split: train
+    model: deeplabv3plus_3a
+    init_weights: initials/DeepLabv3plus_guardrail_initial.pth
+    meta_model: gradient_boosting_3a
+    eps: 3
+    min_samples: 10
+    k: 2
+  experiment4b:
+    dataset: a2d2
+    split: test
+    train_dataset: cityscapes
+    train_split: train
+    model: pspnet_3b
+    init_weights: initials/PSPNet_guardrail_initial.pth
+    meta_model: gradient_boosting_3b
+    eps: 3
+    min_samples: 10
+    k: 1
+  experiment5:
+    dataset: a2d2
+    split: test
+    train_dataset: cityscapes
+    train_split: train
+    model: deeplabv3plus_4
+    init_weights: initials/cityscapes_best.pth
+    meta_model: gradient_boosting_4 
+    eps: 2.5
+    min_samples: 10
+    k: 1
+  experiment6:
+    dataset: cityscapes_human_car_fence_streetsign
+    split: test
+    train_dataset: cityscapes_human_car_fence_streetsign
+    train_split: train
+    model: deeplabv3plus_6
+    init_weights: initials/cityscapes_14_initial.pth
+    meta_model: gradient_boosting_6 
+    eps: 1.75
+    min_samples: 10
+    k: 4
