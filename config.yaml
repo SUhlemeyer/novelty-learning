@@ -8,7 +8,7 @@ seed: 14
 io_root: /home/uhlemeyer/outputs/metasegio
 weight_dir: /home/uhlemeyer/weights
 
-anom_threshold: 0.5
+anom_threshold: 0.6
 
 #### Parameters for trainings
 num_workers: 10
