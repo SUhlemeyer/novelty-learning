@@ -15,6 +15,14 @@ num_workers: 10
 max_epochs: 70
 bs: 5
 
+#### tasks
+tasks:
+  metaseg_train: False
+  metaseg_test: False
+  metaseg_visualize: False
+  compute_embeddings: True
+  detect_clusters: False
+
 #### datasets
 cityscapes:
   _target_: src.datasets.cityscapes.Cityscapes

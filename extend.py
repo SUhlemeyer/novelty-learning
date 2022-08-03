@@ -68,6 +68,8 @@ class TrainFunctions():
         self.ckpt = cfg.weight_dir / cfg.experiments[cfg.experiment]['init_weights']
         self.model = cfg[cfg.experiments[cfg.experiment]['model']]
         self.seed = cfg.seed
+        self.exp = cfg.experiment
+        self.run = cfg.run
 
 
     def loss_ce(self, inp, target, weight=None):
@@ -121,7 +123,7 @@ class TrainFunctions():
         return network0
     
     def prep_model(self):
-        dict = 
+        dict = torch.load(self.ckpt)['state_dict']
         weights_last_layer = torch.load(self.ckpt)['state_dict']['module.final.6.weight']
         shape_last_layer = weights_last_layer.shape
         new_weight = torch.rand((self.k, shape_last_layer[1], shape_last_layer[2], shape_last_layer[3]), requires_grad=True)
@@ -131,7 +133,8 @@ class TrainFunctions():
         dict.update({'module.final.6.weight': new_weight})
 
 
-        network = nn.DataParallel(DeepWV3Plus(CLASSES+k))
+        network = get_model(self.model, num_classes = self.C+self.k)
+        network = nn.DataParallel(network)
         network.load_state_dict(dict, strict=False)
         for param in network.parameters():
             param.requires_grad = False
@@ -146,80 +149,52 @@ class TrainFunctions():
         network.module.final[6].weight.requires_grad = True
         network.cuda()
         network.train()
+        optimizer = optim.Adam(network.parameters(), lr=5*1e-5, weight_decay=1e-4)
+        scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=self.poly_schd)
+        return network, optimizer, scheduler
+
+    def train(self, dat):
+
+        # Start Training
+
+        lambda_d = 0.5
+        best_loss = np.inf
+        datloader = self.prep_data(dat)
+        network0 = self.prep_distill_model()
+        network, optimizer, scheduler = self.prep_model()
 
 
+        for epoch in range(0, self.max_epoch):
+            loss_avg = []
+            print('Epoch {}/{}'.format(epoch + 1, self.max_epoch))
+            i = 0
+            iters = len(datloader)
+            for x, y in datloader:
+                weights = self.calculate_weights(y)
+                optimizer.zero_grad()
+                x = x.cuda()
+                y = y.cuda()
+                out = network(x)
+                out_old = network0(x)
+                loss1 = self.loss_ce(out, y, weight=weights)
+                loss2 = self.loss_d(out, out_old)
+                loss = (1-lambda_d) * loss1 + lambda_d * loss2
+                print(loss1, loss2)
+                loss.backward()
+                optimizer.step()
+                loss_avg.append(loss.item())
+                print('{} Loss: {}'.format(i, loss.item()))
+                scheduler.step(int(epoch + i / iters))
+                i += 1
+            loss_avg = sum(loss_avg) / len(loss_avg)
+            print('Average Loss in {}. epoch: {}'.format(epoch+1, loss_avg))
+            if loss_avg < best_loss:
+                best_loss = loss_avg
+                save_basename = "best_" + "{}_{}.pth".format(self.exp, self.run)
+                save_path = os.path.join('/home/uhlemeyer/weights/', save_basename)
+                print('Saving checkpoint', save_path)
+                torch.save({'state_dict': network.state_dict()}, save_path)
 
-
-
-
-
-
-torch.random.manual_seed(seed)
-
-weights_last_layer = torch.load(pretrained_model_path)['state_dict']['module.final.6.weight']
-shape_last_layer = weights_last_layer.shape
-new_weight = torch.rand((k, shape_last_layer[1], shape_last_layer[2], shape_last_layer[3]), requires_grad=True)
-new_weight = (new_weight * np.sqrt(2 / shape_last_layer[1])).cuda()
-new_weight = torch.cat((weights_last_layer, new_weight), dim=0)
-del dict['module.final.6.weight']
-dict.update({'module.final.6.weight': new_weight})
-
-
-network = nn.DataParallel(DeepWV3Plus(CLASSES+k))
-network.load_state_dict(dict, strict=False)
-for param in network.parameters():
-    param.requires_grad = False
-
-
-network.module.final[0].weight.requires_grad = True
-network.module.final[1].weight.requires_grad = True
-network.module.final[3].weight.requires_grad = True
-network.module.final[4].weight.requires_grad = True
-network.module.bot_fine.weight.requires_grad = True
-network.module.bot_aspp.weight.requires_grad = True
-network.module.final[6].weight.requires_grad = True
-network.cuda()
-network.train()
-
-
-optimizer = optim.Adam(network.parameters(), lr=5*1e-5, weight_decay=1e-4)
-scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=poly_schd)
-
-print('Networks loaded successfully!')
-
-# Start Training
-
-lambda_d = 0.5
-best_loss = np.inf
-
-for epoch in range(0, max_epoch):
-    loss_avg = []
-    print('Epoch {}/{}'.format(epoch + 1, max_epoch))
-    i = 0
-    iters = len(datloader)
-    for x, y in datloader:
-        weights = calculate_weights(y)
-        optimizer.zero_grad()
-        x = x.cuda()
-        y = y.cuda()
-        out = network(x)
-        out_old = network0(x)
-        loss1 = loss_ce(out, y, weight=weights)
-        loss2 = loss_d(out, out_old)
-        loss = (1-lambda_d) * loss1 + lambda_d * loss2
-        print(loss1, loss2)
-        loss.backward()
-        optimizer.step()
-        loss_avg.append(loss.item())
-        print('{} Loss: {}'.format(i, loss.item()))
-        scheduler.step(int(epoch + i / iters))
-        i += 1
-    #scheduler.step()
-    loss_avg = sum(loss_avg) / len(loss_avg)
-    print('Average Loss in {}. epoch: {}'.format(epoch+1, loss_avg))
-    if loss_avg < best_loss:
-        best_loss = loss_avg
-        save_basename = MODEL + "_best_" + "{}_{}_{}.pth".format(exp, run, vers)
-        save_path = os.path.join('/home/uhlemeyer/weights/', save_basename)
-        print('Saving checkpoint', save_path)
-        torch.save({'state_dict': network.state_dict()}, save_path)
+def extend_model():
+    #dat = 
+    #train(dat)
