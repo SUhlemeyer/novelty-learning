@@ -51,7 +51,7 @@ def embedding_main(cfg):
     model_name = cfg.experiments[cfg.experiment]['model']
     nmb_classes = cfg[model_name]['num_classes']
     transform = Compose([ToTensor(), Normalize(dataset.mean, dataset.std)])
-    embedder = Embedding(cfg.io_root, dataset, cfg.experiments[cfg.experiment]['dataset'], cfg.experiments[cfg.experiment]['split'], cfg[cfg.embedding_network], model_name, transform)
+    embedder = Embedding(cfg.io_root, 'metasegio', dataset, cfg.experiments[cfg.experiment]['dataset'], cfg.experiments[cfg.experiment]['split'], cfg[cfg.embedding_network], model_name, transform)
     print("Embedder initialized")
 
 
@@ -63,6 +63,7 @@ def embedding_main(cfg):
 
     print('Loading training data...')
     xa, ya, x_mean, x_std, c_mean, c_std = train_regression_input(metrics_dir=os.path.join(cfg.io_root,
+                                                                                           'metasegio',
                                                                                            cfg.experiments[cfg.experiment]['train_dataset'],
                                                                                            model_name,
                                                                                            cfg.experiments[cfg.experiment]['train_split'],
@@ -135,9 +136,9 @@ def embedding_main(cfg):
 
     for c in tqdm.tqdm(r):
         preds, gt = load_pred_gt(image_path=c['image_path'],
-                                 gt_dir=os.path.join(cfg.io_root, cfg.experiments[cfg.experiment]['dataset'], model_name,
+                                 gt_dir=os.path.join(cfg.io_root, 'metasegio', cfg.experiments[cfg.experiment]['dataset'], model_name,
                                                      cfg.experiments[cfg.experiment]['split'], 'input', 'gt'),
-                                 pred_dir=os.path.join(cfg.io_root, cfg.experiments[cfg.experiment]['dataset'], model_name,
+                                 pred_dir=os.path.join(cfg.io_root, 'metasegio', cfg.experiments[cfg.experiment]['dataset'], model_name,
                                                        cfg.experiments[cfg.experiment]['split'], 'input', 'pred'))
 
         crops['image_path'].append(c['image_path'])
@@ -158,5 +159,5 @@ def embedding_main(cfg):
     print('Features: ', len(crops['embeddings']))
 
     print('Saving data...')
-    with open(os.path.join(cfg.io_root, cfg.experiments[cfg.experiment]['dataset'], model_name, 'embeddings_{}.p'.format(cfg.run)), 'wb') as f:
+    with open(os.path.join(cfg.io_root, 'metasegio', cfg.experiments[cfg.experiment]['dataset'], model_name, 'embeddings_{}.p'.format(cfg.run)), 'wb') as f:
         pkl.dump(crops, f)
