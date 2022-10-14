@@ -114,7 +114,8 @@ class Cityscapes(Dataset):
                  pred_mapping=None,
                  id_to_trainid = id_to_trainid,
                  id_to_color = id_to_color,
-                 trainid_to_id = trainid_to_id):
+                 trainid_to_id = trainid_to_id,
+                 trainid_to_color = trainid_to_color):
         """Load all filenames."""
         super(Cityscapes, self).__init__()
         if pred_mapping is None:
@@ -134,6 +135,7 @@ class Cityscapes(Dataset):
         self.id_to_trainid = id_to_trainid
         self.id_to_color = id_to_color
         self.trainid_to_id = trainid_to_id
+        self.trainid_to_color = trainid_to_color
         for root, _, filenames in os.walk(os.path.join(self.root, 'leftImg8bit',
                                                        self.split)):
             for filename in filenames:

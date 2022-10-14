@@ -1,5 +1,4 @@
-import torch
-import torch.nn as nn
+
 import pickle as pkl
 import numpy as np
 import os
@@ -7,22 +6,6 @@ import tqdm
 
 from PIL import Image
 from sklearn import ensemble
-import hydra
-
-
-
-def init_segmentation_network(model, ckpt_path, num_classes, gpu):
-    # device = torch.device( "cuda:2" if torch.cuda.is_available( ) else "cpu" )
-    print("Checkpoint file:", ckpt_path)
-    print("Load PyTorch model", end="", flush=True)
-    network = hydra.utils.instantiate(model, num_classes=num_classes)
-    #network = nn.DataParallel(network)
-    #network = network.module
-    network.load_state_dict(torch.load(ckpt_path)['state_dict'], strict=False)
-    network = network.cuda().eval()
-    print("... ok")
-    return network
-
 
 def meta_boost(x_train, y_train, x_test, ckpt_path='./booster.pickle.dat'):
     if not os.path.exists(ckpt_path):

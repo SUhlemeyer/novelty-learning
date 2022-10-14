@@ -6,8 +6,9 @@ import numpy as np
 import tqdm
 from PIL import Image
 
-from src.metaseg.utils import init_segmentation_network, train_regression_input, test_regression_input, meta_boost, \
+from src.metaseg.utils import train_regression_input, test_regression_input, meta_boost, \
                               visualize_segments
+from helpers import init_segmentation_network
 from torchvision.transforms import Compose, ToTensor, Normalize
 from src.metaseg.metrics import compute_metrics_components
 from multiprocessing import Pool, set_start_method
@@ -17,17 +18,16 @@ import hydra
 
 
 class MetaRegression(object):
-    def __init__(self, root, dataset, dataset_name, split, model, model_name, ckpt_path, nmb_classes, transform, gpu):
+    def __init__(self, root, dataset, dataset_name, split, model, model_name, ckpt_path, nmb_classes, transform):
 
-        self.segmentation_network = init_segmentation_network(model, ckpt_path, nmb_classes, gpu)
+        self.segmentation_network = init_segmentation_network(model, ckpt_path, nmb_classes)
         self.dataset = dataset
         self.transform = transform
-        self.gpu = gpu
 
-        self.metrics_save_dir = os.path.join(root, dataset_name, model_name, split, "metrics")
-        self.components_save_dir = os.path.join(root, dataset_name, model_name, split, "components")
-        self.probs_save_dir = os.path.join(root, dataset_name, model_name, split, "probs")
-        self.input_save_dir = os.path.join(root, dataset_name, model_name, split, "input")
+        self.metrics_save_dir = os.path.join(root, 'metasegio', dataset_name, model_name, split, "metrics")
+        self.components_save_dir = os.path.join(root, 'metasegio', dataset_name, model_name, split, "components")
+        self.probs_save_dir = os.path.join(root, 'metasegio', dataset_name, model_name, split, "probs")
+        self.input_save_dir = os.path.join(root, 'metasegio', dataset_name, model_name, split, "input")
 
         if not os.path.exists(self.metrics_save_dir):
             os.makedirs(self.metrics_save_dir)
@@ -108,7 +108,7 @@ def meta_main(cfg, dataset_name, split):
     
     transform = Compose([ToTensor(), Normalize(dataset.mean, dataset.std)])
 
-    regressor = MetaRegression(cfg.io_root, dataset, dataset_name, split, model, model_name, ckpt_path, nmb_classes, transform, cfg.gpu)
+    regressor = MetaRegression(cfg.io_root, dataset, dataset_name, split, model, model_name, ckpt_path, nmb_classes, transform)
 
     print('Predicting images and saving probabilities...')
     for i in tqdm.tqdm(range(len(dataset))):
@@ -139,6 +139,7 @@ def visualize(cfg, dataset_name, split):
     print('Visualizing quality estimates...')
     x_train, y_train, x_mean, x_std, c_mean, c_std = train_regression_input(metrics_dir=
                                                                             os.path.join(cfg.io_root,
+                                                                                            'metasegio',
                                                                                             cfg.experiments[cfg.experiment]['train_dataset'],
                                                                                             model_name,
                                                                                             cfg.experiments[cfg.experiment]['train_split'],
@@ -151,6 +152,6 @@ def visualize(cfg, dataset_name, split):
         x_test, _ = test_regression_input(test_metrics=metrics, test_nclasses=nmb_classes,
                                             xa_mean=x_mean, xa_std=x_std, classes_mean=c_mean, classes_std=c_std)
         y_test = meta_boost(x_train, y_train, x_test, chkp_path=cfg[cfg.experiments[cfg.experiment]['meta_model']]['weights'])
-        visualize_segments(y_test, components, os.path.join(cfg.io_root, dataset_name, model_name,
+        visualize_segments(y_test, components, os.path.join(cfg.io_root, 'metasegio', dataset_name, model_name,
                                                             split, "regression_masks",
                                                             os.path.basename(image_path).replace('.png', '_score.png')))

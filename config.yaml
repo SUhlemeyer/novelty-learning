@@ -1,14 +1,19 @@
 
-experiment: experiment5
+experiment: experiment2
 run: run0
 embedding_network: densenet201
-seed: 14
 
+seeds:
+  run0: 14
+  run1: 123
+  run2: 666
+  run3: 375
+  run4: 693
 
-io_root: /home/uhlemeyer/outputs/metasegio
+io_root: /home/uhlemeyer/outputs
 weight_dir: /home/uhlemeyer/weights
 
-anom_threshold: 0.6
+anom_threshold: 0.5
 
 #### Parameters for trainings
 num_workers: 10
@@ -20,8 +25,9 @@ tasks:
   metaseg_train: False
   metaseg_test: False
   metaseg_visualize: False
-  compute_embeddings: True
+  compute_embeddings: False
   detect_clusters: False
+  infer_validation_data: True
 
 #### datasets
 cityscapes:
@@ -57,7 +63,6 @@ deeplabv3plus_1:
 
 deeplabv3plus_2:
   _target_: src.models.deepv3.DeepWV3Plus
-  name: DeepLabv3plus
   num_classes: 18
 
 deeplabv3plus_3a:
@@ -237,3 +242,5 @@ experiments:
     eps: 1.75
     min_samples: 10
     k: 4
+
+

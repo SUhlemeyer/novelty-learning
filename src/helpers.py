@@ -9,6 +9,18 @@ from sklearn.cluster import DBSCAN
 import random
 import matplotlib.pyplot as plt
 import hydra
+import torch
+import torch.nn as nn
+
+def init_segmentation_network(model, ckpt_path, num_classes):
+    print("Checkpoint file:", ckpt_path)
+    print("Load PyTorch model", end="", flush=True)
+    network = hydra.utils.instantiate(model, num_classes=num_classes)
+    network = nn.DataParallel(network)
+    network.load_state_dict(torch.load(ckpt_path)['state_dict'], strict=False)
+    network = network.cuda().eval()
+    print("... ok")
+    return network
 
 
 def embedding_net_init(model):

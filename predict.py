@@ -7,11 +7,10 @@ import torch.nn.functional as F
 from torchvision.transforms import Compose, Normalize, ToTensor
 from PIL import Image
 
-from src.models.deepv3 import DeepWV3Plus
-import src.datasets.cityscapes_human as cs
 import tqdm
-
+from src.metaseg.utils import init_segmentation_network
 from datetime import date
+import hydra
 
 today = date.today()
 
@@ -25,58 +24,62 @@ def prediction(net, image):
     return out.numpy()
 
 
-def from_path_to_input(path):
+def from_path_to_input(path, dataset):
     img = Image.open(path)
-    trans = Compose([ToTensor(), Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
+    trans = Compose([ToTensor(), Normalize(dataset.mean, dataset.std)])
     img = trans(img)
     img = img.unsqueeze(0)
     return img
 
 
-def load_network(exp, run, version, cls):
-    net = nn.DataParallel(
-        DeepWV3Plus(cls))
-    net.load_state_dict(torch.load('/home/uhlemeyer/weights/DeepLabv3plus_best_{}_{}_{}.pth'.format(exp, run, version))['state_dict'], strict=False)
-    net = net.cuda()
-    net.eval()
-    return net
-
-
-def color_image(arr):
-    predc = [(cs.trainid_to_color[arr[p, q]] if (arr[p, q] != 17) else (255, 102, 0) ) for p in range(arr.shape[0]) for q in range(arr.shape[1])]
+def color_image(arr, trainid2color):
+    predc = [trainid2color[arr[p, q]] for p in range(arr.shape[0]) for q in range(arr.shape[1])]
     predc = np.asarray(predc).reshape(arr.shape + (3,))
     return predc
 
 
-def id_image(arr):
-    predc = [(cs.trainid_to_id[arr[p, q]] if (arr[p, q] != 17) else 24 ) for p in range(arr.shape[0]) for q in range(arr.shape[1])]
+def id_image(arr, trainid2id):
+    predc = [trainid2id[arr[p, q]] for p in range(arr.shape[0]) for q in range(arr.shape[1])]
     predc = np.asarray(predc).reshape(arr.shape)
     return predc
 
-exp = 'resnet152'
-nov = 'human'
-run = 'run0'
-version = 4
-net = load_network(exp, run, version, cls=18)
-time = today.strftime("%b-%d-%Y")
 
-if not os.path.exists('/home/uhlemeyer/Evaluation/cityscapes_{}/val/pred/{}/{}/{}_{}/semantic_id/'.format(nov, time, exp, run, version)):
-            os.makedirs('/home/uhlemeyer/Evaluation/cityscapes_{}/val/pred/{}/{}/{}_{}/semantic_id/'.format(nov, time, exp,  run, version))
-if not os.path.exists('/home/uhlemeyer/Evaluation/cityscapes_{}/val/pred/{}/{}/{}_{}/semantic_color/'.format(nov, time, exp,  run, version)):
-        os.makedirs('/home/uhlemeyer/Evaluation/cityscapes_{}/val/pred/{}/{}/{}_{}/semantic_color/'.format(nov, time, exp,  run, version))
+def inference_i(image_path, net, dataset, save_dir):
+    inp = from_path_to_input(image_path, dataset)
+    softmax = prediction(net, inp)
+    softmax = np.squeeze(softmax)
+    pred = np.argmax(softmax, axis=0)
+    pred = np.squeeze(pred)
+
+    im = image_path.split('/')[-1]
+
+    if not os.path.exists(os.path.join(save_dir, 'semantic_id')):
+                os.makedirs(os.path.join(save_dir, 'semantic_id'))
+    if not os.path.exists(os.path.join(save_dir, 'semantic_color')):
+            os.makedirs(os.path.join(save_dir, 'semantic_color'))
+
+    pred_id = id_image(pred, dataset.trainid_to_id).astype("uint8")
+    Image.fromarray(pred_id).save(os.path.join(save_dir, 'semantic_id', im))
+    pred_color = color_image(pred, dataset.trainid_to_color).astype("uint8")
+    Image.fromarray(pred_color).save(os.path.join(save_dir, 'semantic_color', im))
 
 
-for city in tqdm.tqdm(os.listdir('/home/datasets/cityscapes/leftImg8bit/val')):
-    for im in tqdm.tqdm(os.listdir(os.path.join('/home/datasets/cityscapes/leftImg8bit/val', city))):
-        img = os.path.join('/home/datasets/cityscapes/leftImg8bit/val', city, im)
-        inp = from_path_to_input(img)
-        softmax = prediction(net, inp)
-        softmax = np.squeeze(softmax)
-        pred = np.argmax(softmax, axis=0)
-        pred = np.squeeze(pred)
+def predict_all_images(cfg, split, debug_len = None):
 
-        pred_id = id_image(pred).astype("uint8")
-        Image.fromarray(pred_id).save('/home/uhlemeyer/Evaluation/cityscapes_{}/val/pred/{}/{}/{}_{}/semantic_id/'.format(nov, time, exp, run, version) + im)
-        pred_color = color_image(pred).astype("uint8")
-        Image.fromarray(pred_color).save(
-            '/home/uhlemeyer/Evaluation/cityscapes_{}/val/pred/{}/{}/{}_{}/semantic_color/'.format(nov, time, exp,  run, version) + im)
+    dataset_name = cfg.experiments[cfg.experiment]['dataset']
+    model_name = cfg.experiments[cfg.experiment]['model']
+    model = cfg[model_name]
+    nmb_classes = cfg[model_name]['num_classes'] + cfg.experiments[cfg.experiment]['k']
+    ckpt_path = os.path.join(cfg.weight_dir, 'extended', cfg.run, cfg.experiment + '_best.pth')
+
+    net = init_segmentation_network(model, ckpt_path, nmb_classes)
+    dataset = hydra.utils.instantiate(cfg[dataset_name], split)
+
+    time = today.strftime("%b-%d-%Y")
+    save_dir = os.path.join(cfg.io_root, 'eval', dataset_name, split, 'pred', time, cfg.run)
+
+    if debug_len == None:
+        debug_len = len(dataset)
+    for i in tqdm.tqdm(range(debug_len)):
+        image_path = dataset.images[i]
+        inference_i(image_path, net, dataset, save_dir)
