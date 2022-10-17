@@ -1,5 +1,5 @@
 
-experiment: experiment2
+experiment: experiment1
 run: run0
 embedding_network: densenet201
 
@@ -17,8 +17,9 @@ anom_threshold: 0.5
 
 #### Parameters for trainings
 num_workers: 10
-max_epochs: 70
+max_epoch: 70
 bs: 5
+lam: 0.5
 
 #### tasks
 tasks:
@@ -27,7 +28,8 @@ tasks:
   metaseg_visualize: False
   compute_embeddings: False
   detect_clusters: False
-  infer_validation_data: True
+  extend_model: True
+  infer_validation_data: False
 
 #### datasets
 cityscapes:
@@ -58,7 +60,6 @@ a2d2:
 #### models
 deeplabv3plus_1:
   _target_: src.models.deepv3.DeepWV3Plus
-  name: DeepLabv3plus
   num_classes: 17
 
 deeplabv3plus_2:
@@ -82,7 +83,6 @@ deeplabv3plus_5:
 
 deeplabv3plus_6:
   _target_: src.models.deepv3.DeepWV3Plus
-  name: DeepLabv3plus
   num_classes: 14
 
 pspnet_3b:
@@ -132,8 +132,9 @@ experiments:
     split: test
     train_dataset: cityscapes_human
     train_split: train
+    dict: experiment1_data.p
     model: deeplabv3plus_1
-    init_weights: initials/cityscapes_human_initial.pth
+    init_weights: initials/experiment1/best.pth
     meta_model: gradient_boosting_1
     pred_class_selection: [
         # 0,  # road
@@ -162,8 +163,9 @@ experiments:
     split: test
     train_dataset: cityscapes_bus
     train_split: train
+    dict: experiment2_data.p
     model: deeplabv3plus_2
-    init_weights: initials/cityscapes_bus_initial.pth
+    init_weights: initials/experiment2/best.pth
     meta_model: gradient_boosting_2
     pred_class_selection: [
         # 0,  # road
@@ -193,9 +195,27 @@ experiments:
     split: test
     train_dataset: cityscapes_human_bus_car
     train_split: train
+    dict: experiment3_data.p
     model: deeplabv3plus_5
-    init_weights: initials/best_checkpoint_ep177.pth
+    init_weights: initials/experiment3/best.pth
     meta_model: gradient_boosting_5
+    pred_class_selection: [
+        # 0,  # road
+        # 1,  # sidewalk
+        # 2,  # building
+        3,  # wall
+        4,  # fence
+        # 5,  # pole
+        6,  # traffic light
+        7,  # traffic sign
+        # 8,  # vegetation
+        # 9,  # terrain
+        # 10,  # sky
+        11,  # truck
+        12,  # train
+        13,  # motorcycle
+        14,  # bicycle
+    ]
     eps: 1.75
     min_samples: 10
   experiment4a:
@@ -203,8 +223,9 @@ experiments:
     split: test
     train_dataset: cityscapes
     train_split: train
+    dict: experiment4a_data.p
     model: deeplabv3plus_3a
-    init_weights: initials/DeepLabv3plus_guardrail_initial.pth
+    init_weights: initials/experiment4a/best.pth
     meta_model: gradient_boosting_3a
     eps: 3
     min_samples: 10
@@ -214,8 +235,9 @@ experiments:
     split: test
     train_dataset: cityscapes
     train_split: train
+    dict: experiment4b_data.p
     model: pspnet_3b
-    init_weights: initials/PSPNet_guardrail_initial.pth
+    init_weights: initials/experiment4b/best.pth
     meta_model: gradient_boosting_3b
     eps: 3
     min_samples: 10
@@ -225,8 +247,9 @@ experiments:
     split: test
     train_dataset: cityscapes
     train_split: train
+    dict: experiment5_data.p
     model: deeplabv3plus_4
-    init_weights: initials/cityscapes_best.pth
+    init_weights: initials/experiment5/best.pth
     meta_model: gradient_boosting_4 
     eps: 2.5
     min_samples: 10
@@ -236,8 +259,9 @@ experiments:
     split: test
     train_dataset: cityscapes_human_car_fence_streetsign
     train_split: train
+    dict: experiment6_data.p
     model: deeplabv3plus_6
-    init_weights: initials/cityscapes_14_initial.pth
+    init_weights: initials/experiment6/best.pth
     meta_model: gradient_boosting_6 
     eps: 1.75
     min_samples: 10

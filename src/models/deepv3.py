@@ -100,7 +100,7 @@ class DeepV3Plus(nn.Module):
     with skip connections
     """
 
-    def __init__(self, num_classes, trunk='seresnext-50', criterion=None, variant='D',
+    def __init__(self, num_classes, trunk='seresnext-50', criterion=nn.NLLLoss(), variant='D',
                  skip='m1', skip_num=48):
         super(DeepV3Plus, self).__init__()
         self.criterion = criterion
@@ -215,9 +215,10 @@ class DeepWV3Plus(nn.Module):
                   (1024, 2048, 4096)]
     """
 
-    def __init__(self, num_classes, trunk='WideResnet38'):
+    def __init__(self, num_classes, trunk='WideResnet38', criterion=nn.NLLLoss()):
 
         super(DeepWV3Plus, self).__init__()
+        self.criterion = criterion
         logging.debug("Trunk: %s", trunk)
         wide_resnet = wider_resnet38_a2(classes=1000, dilation=True)
         wide_resnet = torch.nn.DataParallel(wide_resnet)

@@ -1,14 +1,13 @@
 import os
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 from torchvision.transforms import Compose, Normalize, ToTensor
 from PIL import Image
 
 import tqdm
-from src.metaseg.utils import init_segmentation_network
+from src.helpers import init_segmentation_network
 from datetime import date
 import hydra
 

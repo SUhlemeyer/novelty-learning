@@ -8,7 +8,7 @@ from PIL import Image
 
 from src.metaseg.utils import train_regression_input, test_regression_input, meta_boost, \
                               visualize_segments
-from helpers import init_segmentation_network
+from src.helpers import init_segmentation_network
 from torchvision.transforms import Compose, ToTensor, Normalize
 from src.metaseg.metrics import compute_metrics_components
 from multiprocessing import Pool, set_start_method

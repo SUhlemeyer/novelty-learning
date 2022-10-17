@@ -1,22 +1,12 @@
 from metaseg_main import meta_main, visualize
-# from compute_embeddings import embedding_main
-# from detect_cluster import get_cluster
-# from extend import extend_model
+from compute_embeddings import embedding_main
+from detect_cluster import get_cluster
+from extend import extend_model
 from predict import predict_all_images
 
 import sys
-import os
-import pickle
-import torch
-import torch.nn.functional as F
-import numpy as np
-import importlib
-import tqdm
-from PIL import Image
-
 import hydra
 from omegaconf import DictConfig
-from torchvision.transforms import Compose, Normalize, ToTensor
 
 
 @hydra.main(config_path=".", config_name="config.yaml")
@@ -35,24 +25,24 @@ def main(cfg: DictConfig):
     if cfg.tasks.metaseg_visualize:
         visualize(cfg, cfg.experiments[cfg.experiment]['train_dataset'], cfg.experiments[cfg.experiment]['train_split'])
 
-    # if cfg.tasks.compute_embeddings:
-    #     print("Start computing embeddings...")
-    #     embedding_main(cfg)
-    #     print("...done")
+    if cfg.tasks.compute_embeddings:
+        print("Start computing embeddings...")
+        embedding_main(cfg)
+        print("...done")
 
-    # if cfg.tasks.detect_clusters:
-    #     print("Looking for novel classes...")
-    #     get_cluster(cfg)
-    #     print("...done")
+    if cfg.tasks.detect_clusters:
+        print("Looking for novel classes...")
+        get_cluster(cfg)
+        print("...done")
     
-    # if cfg.tasks.extend_model:
-    #     print("Training of extended model...")
-    #     extend_model(cfg)
-    #     print("...done")
+    if cfg.tasks.extend_model:
+        print("Training of extended model...")
+        extend_model(cfg)
+        print("...done")
 
     if cfg.tasks.infer_validation_data:
         print("Inference of validation data...")
-        predict_all_images(cfg, 'val', debug_len = 10)
+        predict_all_images(cfg, 'val', debug_len = None)
         print("...done")
     
 
