@@ -21,13 +21,13 @@ class Train_Data(Dataset):
                  data_dict,
                  C,
                  k,
-                 label_root='/home/uhlemeyer/outputs/Cluster_experiment1_run0/human/semantic_id',
+                 label_root='./datasets/pseudo_label',
                  id2trainid=None,
                  map_fun=None,
-                 transform=None):
+                 transform=None, exp = None):
         """Load all filenames."""
         super(Train_Data, self).__init__()
-        self.label_root = label_root
+        self.label_root = os.path.join(label_root, exp)
         self.transform = transform
 
         self.dataset_root = dataset_root
@@ -133,7 +133,7 @@ class Trainer():
 
     def prep_data(self):
         trans = Compose([RandomHorizontalFlip(), RandomCrop(1000), ToTensor(), Normalize(self.dataset.mean, self.dataset.std)])
-        data = Train_Data(self.dataset.root, self.train_dataset, id2trainid=self.dataset.id_to_trainid, map_fun=self.fulltotrain, transform=trans, C = self.C, k = self.k)
+        data = Train_Data(self.dataset.root, self.train_dataset, id2trainid=self.dataset.id_to_trainid, map_fun=self.fulltotrain, transform=trans, C = self.C, k = self.k, exp = self.exp)
         datloader = DataLoader(data, batch_size=self.bs, shuffle=True, drop_last=True, num_workers=self.num_workers)
         return datloader
 
@@ -215,8 +215,6 @@ class Trainer():
                 best_loss = loss_avg
                 print('Saving checkpoint', self.save_ckpt)
                 torch.save({'state_dict': network.state_dict()}, self.save_ckpt)
-
-
 
 
 def extend_model(cfg):

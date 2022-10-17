@@ -48,9 +48,9 @@ cityscapes_human_bus_car:
   _target_: src.datasets.cityscapes_human_bus_car.Cityscapes
   root: /home/datasets/cityscapes
 
-cityscapes_human_car_fence_streetsign:
-  _target_: src.datasets.cityscapes_human_car_fence_streetsign.Cityscapes
-  root: /home/datasets/cityscapes
+# cityscapes_human_car_fence_streetsign:
+#   _target_: src.datasets.cityscapes_human_car_fence_streetsign.Cityscapes
+#   root: /home/datasets/cityscapes
 
 a2d2:
   _target_: src.datasets.a2d2.A2D2
@@ -81,9 +81,9 @@ deeplabv3plus_5:
   name: DeepLabv3plus
   num_classes: 15
 
-deeplabv3plus_6:
-  _target_: src.models.deepv3.DeepWV3Plus
-  num_classes: 14
+# deeplabv3plus_6:
+#   _target_: src.models.deepv3.DeepWV3Plus
+#   num_classes: 14
 
 pspnet_3b:
   _target_: src.models.pspnet.PSPNet
@@ -110,8 +110,8 @@ gradient_boosting_4:
 gradient_boosting_5:
   weights: meta/booster_cs_15.pickle.dat
 
-gradient_boosting_6:
-  weights: meta/booster_cs_14.pickle.dat
+# gradient_boosting_6:
+#   weights: meta/booster_cs_14.pickle.dat
 
 ### embedding networks
 densenet201:
@@ -119,10 +119,6 @@ densenet201:
 
 resnet101:
   _target_: src.models.embedding_networks.feature_resnet101
-
-vgg16:
-  _target_: src.models.embedding_networks.feature_vgg16
-
 
 
 #### experimental setup
@@ -155,6 +151,7 @@ experiments:
         15,  # motorcycle
         16,  # bicycle
     ]
+    ignore_background: True
     eps: 2.5
     min_samples: 10
     k: 1
@@ -187,6 +184,7 @@ experiments:
         16,  # motorcycle
         17,  # bicycle
     ]
+    ignore_background: False
     eps: 2.5
     min_samples: 10
     k: 1
@@ -216,8 +214,10 @@ experiments:
         13,  # motorcycle
         14,  # bicycle
     ]
+    ignore_background: True
     eps: 1.75
     min_samples: 10
+    k: 2
   experiment4a:
     dataset: a2d2
     split: test
@@ -229,7 +229,7 @@ experiments:
     meta_model: gradient_boosting_3a
     eps: 3
     min_samples: 10
-    k: 2
+    k: 1
   experiment4b:
     dataset: a2d2
     split: test
@@ -239,6 +239,7 @@ experiments:
     model: pspnet_3b
     init_weights: initials/experiment4b/best.pth
     meta_model: gradient_boosting_3b
+    ignore_background: False
     eps: 3
     min_samples: 10
     k: 1
@@ -251,20 +252,24 @@ experiments:
     model: deeplabv3plus_4
     init_weights: initials/experiment5/best.pth
     meta_model: gradient_boosting_4 
+    ignore_background: False
     eps: 2.5
     min_samples: 10
     k: 1
-  experiment6:
-    dataset: cityscapes_human_car_fence_streetsign
-    split: test
-    train_dataset: cityscapes_human_car_fence_streetsign
-    train_split: train
-    dict: experiment6_data.p
-    model: deeplabv3plus_6
-    init_weights: initials/experiment6/best.pth
-    meta_model: gradient_boosting_6 
-    eps: 1.75
-    min_samples: 10
-    k: 4
+
+
+
+  # experiment6:
+  #   dataset: cityscapes_human_car_fence_streetsign
+  #   split: test
+  #   train_dataset: cityscapes_human_car_fence_streetsign
+  #   train_split: train
+  #   dict: experiment6_data.p
+  #   model: deeplabv3plus_6
+  #   init_weights: initials/experiment6/best.pth
+  #   meta_model: gradient_boosting_6 
+  #   eps: 1.75
+  #   min_samples: 10
+  #   k: 4
 
 

@@ -13,12 +13,11 @@ def get_cluster(cfg: DictConfig):
 
     dataset = hydra.utils.instantiate(cfg[cfg.experiments[cfg.experiment]['train_dataset']], cfg.experiments[cfg.experiment]['train_split'])
 
-    save_dir = '/home/uhlemeyer/outputs/Cluster_' + cfg.experiment + '_' + cfg.run
+    save_dir = os.path.join(cfg.io_root, 'Cluster', cfg.experiment + '_' + cfg.run)
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     load_dir = os.path.join(cfg.io_root, cfg.experiments[cfg.experiment]['dataset'], cfg.experiments[cfg.experiment]['model'])
-    embed_dir = os.path.join(load_dir, 'embeddings.p') #.format(cfg.run))
-    
+    embed_dir = os.path.join(load_dir, 'embeddings.p')
     data = pkl.load(open(embed_dir, 'rb'))
     
     ix, level = delete_knowns(data, os.path.join(load_dir, cfg.experiments[cfg.experiment]['split']))
@@ -31,7 +30,7 @@ def get_cluster(cfg: DictConfig):
             if not os.path.exists(save_dir + '/cluster_{}/'.format(n)):
                 os.makedirs(save_dir + '/cluster_{}/'.format(n))
             ind = np.flatnonzero(lbl == n)
-            ili = level[ind] #np.array(data['image_level_index'])[ind]
+            ili = level[ind]
             component_indices = np.asarray(data['component_index'])[ix]
             component_indices = component_indices[ind]
             boxes = np.asarray(data['box'])[ix]
@@ -67,7 +66,7 @@ def get_cluster(cfg: DictConfig):
 
 
             for k, lvl in enumerate(ili):
-                img_name = paths[k].split('/')[-1]#paths[k].split('/')[-1]
+                img_name = paths[k].split('/')[-1]
                 components = np.asarray(pkl.load(open(os.path.join(
                                       load_dir, cfg.experiments[cfg.experiment]['split'], 'components',
                                       img_name.replace('png', 'p')), 'rb')))
@@ -87,8 +86,8 @@ def get_cluster(cfg: DictConfig):
                 for i in range(len(iou)):
                     if iou[i] <= iou_threshold:
                         pred_mask[np.abs(comp_in_box) == i+1] = 200 + n
-                    # elif iou[i] > iou_threshold and cfg.ignore:
-                    #     pred_mask[np.abs(comp_in_box) == i+1] = 0
+                    elif iou[i] > iou_threshold and cfg.experiments[cfg.experiment]['ignore_background']:
+                        pred_mask[np.abs(comp_in_box) == i+1] = 0
                 Image.fromarray(pred_mask.astype('uint8')).save(os.path.join(save_dir, 'cluster_{}/semantic_id'.format(n), img_name))
                 predc = [(dataset.id_to_color[pred_mask[p, q]] if (pred_mask[p, q]<200) else (255, 102, 0  )) for p in range(pred_mask.shape[0]) for q in
                           range(pred_mask.shape[1])]
