@@ -16,7 +16,7 @@ def init_segmentation_network(model, ckpt_path, num_classes):
     print("Checkpoint file:", ckpt_path)
     print("Load PyTorch model", end="", flush=True)
     network = hydra.utils.instantiate(model, num_classes=num_classes)
-    network = nn.DataParallel(network)
+    #network = nn.DataParallel(network)
     network.load_state_dict(torch.load(ckpt_path)['state_dict'], strict=False)
     network = network.cuda().eval()
     print("... ok")
@@ -119,7 +119,8 @@ def get_component_gt(gt, segment_indices):
 
 
 def get_component_pred(pred, segment_indices):
-    return pred[segment_indices[0, 0], segment_indices[0, 1]]
+    cls, cls_counts = np.unique(pred[segment_indices[:, 0], segment_indices[:, 1]], return_counts=True)
+    return cls[np.argsort(cls_counts)[-1]]
 
 
 def load_components(image_path, save_dir):
@@ -232,10 +233,10 @@ def delete_knowns(data, load_dir):
         for k in cls_big:
             pred_mask[comp_org == k] = pred[comp_org == k]
         cls, cnts = np.unique(pred_mask[pred_mask<np.inf], return_counts=True)
-        cls2 = cls[cnts > 0]
+        cls2 = cls[cnts > 500]
         
         
-        if len(cls2) > 0:
+        if len(cls2) > 1:
             ix.append(i)
             level.append(ili)
 

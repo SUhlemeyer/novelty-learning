@@ -24,10 +24,10 @@ class MetaRegression(object):
         self.dataset = dataset
         self.transform = transform
 
-        self.metrics_save_dir = os.path.join(root, 'metasegio', dataset_name, model_name, split, "metrics")
-        self.components_save_dir = os.path.join(root, 'metasegio', dataset_name, model_name, split, "components")
-        self.probs_save_dir = os.path.join(root, 'metasegio', dataset_name, model_name, split, "probs")
-        self.input_save_dir = os.path.join(root, 'metasegio', dataset_name, model_name, split, "input")
+        self.metrics_save_dir = os.path.join(root, dataset_name, model_name, split, "metrics")
+        self.components_save_dir = os.path.join(root, dataset_name, model_name, split, "components")
+        self.probs_save_dir = os.path.join(root, dataset_name, model_name, split, "probs")
+        self.input_save_dir = os.path.join(root, dataset_name, model_name, split, "input")
 
         if not os.path.exists(self.metrics_save_dir):
             os.makedirs(self.metrics_save_dir)
@@ -139,19 +139,19 @@ def visualize(cfg, dataset_name, split):
     print('Visualizing quality estimates...')
     x_train, y_train, x_mean, x_std, c_mean, c_std = train_regression_input(metrics_dir=
                                                                             os.path.join(cfg.io_root,
-                                                                                            'metasegio',
                                                                                             cfg.experiments[cfg.experiment]['train_dataset'],
                                                                                             model_name,
                                                                                             cfg.experiments[cfg.experiment]['train_split'],
                                                                                             'metrics'),
                                                                             nmb_classes=nmb_classes)
 
+    chkp_path = os.path.join(cfg.weight_dir, cfg[cfg.experiments[cfg.experiment]['meta_model']]['weights'])
     for i in tqdm.tqdm(range(len(dataset))):
         metrics, components, image_path = regressor.get_segment_metrics(i)
 
         x_test, _ = test_regression_input(test_metrics=metrics, test_nclasses=nmb_classes,
                                             xa_mean=x_mean, xa_std=x_std, classes_mean=c_mean, classes_std=c_std)
-        y_test = meta_boost(x_train, y_train, x_test, chkp_path=cfg[cfg.experiments[cfg.experiment]['meta_model']]['weights'])
-        visualize_segments(y_test, components, os.path.join(cfg.io_root, 'metasegio', dataset_name, model_name,
+        y_test = meta_boost(x_train, y_train, x_test, chkp_path=chkp_path)
+        visualize_segments(y_test, components, os.path.join(cfg.io_root, dataset_name, model_name,
                                                             split, "regression_masks",
                                                             os.path.basename(image_path).replace('.png', '_score.png')))

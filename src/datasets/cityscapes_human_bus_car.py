@@ -64,11 +64,11 @@ labels = [
     Label(  'vegetation'           , 21 ,        8 , 'nature'          , 4       , False        , False        , (107,142, 35) ),
     Label(  'terrain'              , 22 ,        9 , 'nature'          , 4       , False        , False        , (152,251,152) ),
     Label(  'sky'                  , 23 ,       10 , 'sky'             , 5       , False        , False        , ( 70,130,180) ),
-    Label(  'person'               , 24 ,      255 , 'human'           , 6       , True         , True         , (220, 20, 60) ),
+    Label(  'person'               , 24 ,      15 , 'human'           , 6       , True          , False         , (0, 51, 25) ),#(220, 20, 60) ),
     Label(  'rider'                , 25 ,      255 , 'human'           , 6       , True         , True         , (255,  0,  0) ),
-    Label(  'car'                  , 26 ,      255 , 'vehicle'         , 7       , True         , True         , (  0,  0,142) ),
+    Label(  'car'                  , 26 ,      16 , 'vehicle'         , 7       , True         , True         , (204, 0, 102) ),#(  0,  0,142) ),
     Label(  'truck'                , 27 ,       11 , 'vehicle'         , 7       , True         , False        , (  0,  0, 70) ),
-    Label(  'bus'                  , 28 ,      255 , 'vehicle'         , 7       , True         , True        , (  0, 60,100) ),
+    Label(  'bus'                  , 28 ,      17 , 'vehicle'         , 7       , True         , True        , (255, 128, 0) ),#(  0, 60,100) ),
     Label(  'caravan'              , 29 ,      255 , 'vehicle'         , 7       , True         , True         , (  0,  0, 90) ),
     Label(  'trailer'              , 30 ,      255 , 'vehicle'         , 7       , True         , True         , (  0,  0,110) ),
     Label(  'train'                , 31 ,       12 , 'vehicle'         , 7       , True         , False        , (  0, 80,100) ),
@@ -112,7 +112,9 @@ class Cityscapes(Dataset):
                  transform=None,
                  label_mapping=None,
                  pred_mapping=None,
-                 id_to_trainid = id_to_trainid
+                 id_to_trainid = id_to_trainid,
+                 trainid_to_id = trainid_to_id,
+                 trainid_to_color = trainid_to_color
                  ):
         """Load all filenames."""
         super(Cityscapes, self).__init__()
@@ -133,6 +135,8 @@ class Cityscapes(Dataset):
         self.targets = []
         self.map_fun = map_fun
         self.id_to_trainid = id_to_trainid
+        self.trainid_to_id = trainid_to_id
+        self.trainid_to_color = trainid_to_color
 
         for root, _, filenames in os.walk(os.path.join(self.root, 'leftImg8bit',
                                                        self.split)):

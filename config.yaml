@@ -1,7 +1,7 @@
 
-experiment: experiment1
-run: run0
-embedding_network: densenet201
+experiment: experiment1         #[experiment1, experiment2, experiment3, experiment4a, experiment4b, experiment5]
+run: run0                       #[run0, run1, run2, run3, run4]
+embedding_network: densenet201  #[densenet201, resnet101]
 
 seeds:
   run0: 14
@@ -10,8 +10,9 @@ seeds:
   run3: 375
   run4: 693
 
-io_root: /home/uhlemeyer/outputs
-weight_dir: /home/uhlemeyer/weights
+io_root: ./outputs
+weight_dir: ./weights
+dataset_dir: /home/datasets
 
 anom_threshold: 0.5
 
@@ -27,34 +28,31 @@ tasks:
   metaseg_test: False
   metaseg_visualize: False
   compute_embeddings: False
-  detect_clusters: False
-  extend_model: True
+  detect_clusters: True
+  extend_model: False
   infer_validation_data: False
 
 #### datasets
 cityscapes:
   _target_: src.datasets.cityscapes.Cityscapes
-  root: /home/datasets/cityscapes
+  root: cityscapes
 
 cityscapes_human:
   _target_: src.datasets.cityscapes_human.Cityscapes
-  root: /home/datasets/cityscapes
+  root: cityscapes
 
 cityscapes_bus:
   _target_: src.datasets.cityscapes_bus.Cityscapes
-  root:  /home/datasets/cityscapes
+  root:  cityscapes
 
 cityscapes_human_bus_car:
   _target_: src.datasets.cityscapes_human_bus_car.Cityscapes
-  root: /home/datasets/cityscapes
+  root: cityscapes
 
-# cityscapes_human_car_fence_streetsign:
-#   _target_: src.datasets.cityscapes_human_car_fence_streetsign.Cityscapes
-#   root: /home/datasets/cityscapes
 
 a2d2:
   _target_: src.datasets.a2d2.A2D2
-  root: /home/uhlemeyer/A2D2
+  root: A2D2
 
 
 #### models
@@ -78,12 +76,7 @@ deeplabv3plus_4:
 
 deeplabv3plus_5:
   _target_: src.models.deepv3.DeepWV3Plus
-  name: DeepLabv3plus
   num_classes: 15
-
-# deeplabv3plus_6:
-#   _target_: src.models.deepv3.DeepWV3Plus
-#   num_classes: 14
 
 pspnet_3b:
   _target_: src.models.pspnet.PSPNet
@@ -109,9 +102,6 @@ gradient_boosting_4:
 
 gradient_boosting_5:
   weights: meta/booster_cs_15.pickle.dat
-
-# gradient_boosting_6:
-#   weights: meta/booster_cs_14.pickle.dat
 
 ### embedding networks
 densenet201:
@@ -256,20 +246,3 @@ experiments:
     eps: 2.5
     min_samples: 10
     k: 1
-
-
-
-  # experiment6:
-  #   dataset: cityscapes_human_car_fence_streetsign
-  #   split: test
-  #   train_dataset: cityscapes_human_car_fence_streetsign
-  #   train_split: train
-  #   dict: experiment6_data.p
-  #   model: deeplabv3plus_6
-  #   init_weights: initials/experiment6/best.pth
-  #   meta_model: gradient_boosting_6 
-  #   eps: 1.75
-  #   min_samples: 10
-  #   k: 4
-
-

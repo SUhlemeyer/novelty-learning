@@ -21,6 +21,7 @@ def get_cluster(cfg: DictConfig):
     data = pkl.load(open(embed_dir, 'rb'))
     
     ix, level = delete_knowns(data, os.path.join(load_dir, cfg.experiments[cfg.experiment]['split']))
+    #np.save(open('indices.npy', 'wb'), ix)
     data_tsne = tsne_emb(data, os.path.join(load_dir, 'tsne_data_{}.p'.format(cfg.run)))[ix]
 
    
@@ -85,15 +86,12 @@ def get_cluster(cfg: DictConfig):
 
                 for i in range(len(iou)):
                     if iou[i] <= iou_threshold:
-                        pred_mask[np.abs(comp_in_box) == i+1] = 200 + n
+                        pred_mask[np.abs(comp_in_box) == i+1] = dataset.num + n
                     elif iou[i] > iou_threshold and cfg.experiments[cfg.experiment]['ignore_background']:
-                        pred_mask[np.abs(comp_in_box) == i+1] = 0
+                        pred_mask[np.abs(components) == i+1] = 0
                 Image.fromarray(pred_mask.astype('uint8')).save(os.path.join(save_dir, 'cluster_{}/semantic_id'.format(n), img_name))
-                predc = [(dataset.id_to_color[pred_mask[p, q]] if (pred_mask[p, q]<200) else (255, 102, 0  )) for p in range(pred_mask.shape[0]) for q in
+                predc = [(dataset.id_to_color[pred_mask[p, q]] if (pred_mask[p, q]< dataset.num) else (255, 102, 0  )) for p in range(pred_mask.shape[0]) for q in
                           range(pred_mask.shape[1])]
                 predc = np.asarray(predc).reshape(pred_mask.shape + (3,))
 
                 Image.fromarray(predc.astype('uint8')).save(save_dir + '/cluster_{}/semantic_color/'.format(n) + img_name)
-
-if __name__ == '__main__':
-    get_cluster()

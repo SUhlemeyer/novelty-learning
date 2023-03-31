@@ -196,7 +196,8 @@ class A2D2(data.Dataset):
                  label_mapping=None,
                  id_to_trainid = id_to_trainid,
                  id_to_color = id_to_color,
-                 trainid_to_id = trainid_to_id):
+                 trainid_to_id = trainid_to_id,
+                 trainid_to_color = trainid_to_color):
         super(A2D2).__init__()
         if label_mapping is None:
             label_mapping = discover_mapping
@@ -219,6 +220,7 @@ class A2D2(data.Dataset):
         self.id_to_trainid = id_to_trainid
         self.id_to_color = id_to_color
         self.trainid_to_id = trainid_to_id
+        self.trainid_to_color = trainid_to_color
         self.images = []
         self.targets = []
 
@@ -233,10 +235,7 @@ class A2D2(data.Dataset):
                                                    'labels_id', self.split)
                         self.targets.append(os.path.join(target_root,
                                                          filename))
-                    # elif self.split == 'test':
-                    #     target_root = os.path.join(self.root, 'preds', self.split, 'pseudo-label')
-                    #     if os.path.isdir(target_root):
-                    #         self.targets.append(os.path.join(target_root, filename))
+
         # create color matrix for indexing the class ids
         colors = np.array([label.color for label in labels])
         self.color_mat = np.zeros((256, 256, 256), dtype=np.uint8)
@@ -245,8 +244,7 @@ class A2D2(data.Dataset):
 
     def __getitem__(self, index):
         image = Image.open(self.images[index]).convert('RGB')
-        if self.split in ['train', 'val']: #or os.path.isdir(os.path.join(self.root,
-                                                #           'preds', self.split, 'pseudo-label')):
+        if self.split in ['train', 'val']: 
             target = Image.open(self.targets[index]).convert('L')
         else:
             target = Image.fromarray(255*np.ones((image.size[1], image.size[0])).astype('uint8'))

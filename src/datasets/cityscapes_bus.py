@@ -79,8 +79,8 @@ labels = [
     Label('unlabeled',              void_ind,   void_ind,       'void',             0,      False,          True,           (0  , 0  , 0  ))
 ]
 
-id_to_trainid = {label.id: (label.trainid if (label.id < 200) else 18) for label in labels}
-id_to_color = {label.id: (label.color if (label.id < 200) else (255, 102, 0  )) for label in labels}
+id_to_trainid = {label.id: label.trainid for label in labels}
+id_to_color = {label.id: label.color for label in labels}
 color_to_id = {label.color: label.id for label in labels}
 id_to_name = {label.id: label.name for label in labels}
 trainid_to_id = {label.trainid: (label.id if (label.trainid != void_ind) else 0) for label in labels}

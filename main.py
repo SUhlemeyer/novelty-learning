@@ -23,7 +23,7 @@ def main(cfg: DictConfig):
         print("...done")
 
     if cfg.tasks.metaseg_visualize:
-        visualize(cfg, cfg.experiments[cfg.experiment]['train_dataset'], cfg.experiments[cfg.experiment]['train_split'])
+        visualize(cfg, cfg.experiments[cfg.experiment]['dataset'], cfg.experiments[cfg.experiment]['split'])
 
     if cfg.tasks.compute_embeddings:
         print("Start computing embeddings...")

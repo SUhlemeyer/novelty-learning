@@ -114,7 +114,7 @@ labels = [
     Label(  'vegetation'           , 21 ,      8        ,       'nature'          , 4       , False        , False        , (107,142, 35) ),
     Label(  'terrain'              , 22 ,      9        ,       'nature'          , 4       , False        , False        , (152,251,152) ),
     Label(  'sky'                  , 23 ,      10       ,       'sky'             , 5       , False        , False        , ( 70,130,180) ),
-    Label(  'person'               , 24 ,      11       ,       'human'           , 6       , True         , False        , (220, 20, 60) ),
+    Label(  'person'               , 24 ,      11       ,       'human'           , 6       , True         , True        , (220, 20, 60) ),
     Label(  'rider'                , 25 ,      12       ,       'human'           , 7       , True         , False        ,   (255, 0, 0) ),
     Label(  'car'                  , 26 ,      13       ,       'vehicle'         , 7       , True         , False        , (  0,  0,142) ),
     Label(  'truck'                , 27 ,      14       ,       'vehicle'         , 7       , True         , False        , (  0,  0, 70) ),
@@ -256,7 +256,8 @@ class Cityscapes(Dataset):
                  pred_mapping=None,
                  id_to_trainid = id_to_trainid,
                  id_to_color = id_to_color,
-                 trainid_to_id = trainid_to_id):
+                 trainid_to_id = trainid_to_id,
+                 trainid_to_color = trainid_to_color):
         """Load all filenames."""
         super(Cityscapes, self).__init__()
         if pred_mapping is None:
@@ -276,6 +277,7 @@ class Cityscapes(Dataset):
         self.id_to_trainid = id_to_trainid
         self.id_to_color = id_to_color
         self.trainid_to_id = trainid_to_id
+        self.trainid_to_color = trainid_to_color
 
 
         for root, _, filenames in os.walk(os.path.join(self.root, 'leftImg8bit',

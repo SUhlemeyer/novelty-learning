@@ -53,20 +53,20 @@ labels = [
     Label(  'rail track'           , 10 ,      255 , 'flat'            , 1       , False        , True         , (230,150,140) ),
     Label(  'building'             , 11 ,        2 , 'construction'    , 2       , False        , False        , ( 70, 70, 70) ),
     Label(  'wall'                 , 12 ,        3 , 'construction'    , 2       , False        , False        , (102,102,156) ),
-    Label(  'fence'                , 13 ,      255 , 'construction'    , 2       , False        , False        , (190,153,153) ),
+    Label(  'fence'                , 13 ,      14 , 'construction'    , 2       , False        , False        , (190,153,153) ),
     Label(  'guard rail'           , 14 ,      255 , 'construction'    , 2       , False        , True         , (180,165,180) ),
     Label(  'bridge'               , 15 ,      255 , 'construction'    , 2       , False        , True         , (150,100,100) ),
     Label(  'tunnel'               , 16 ,      255 , 'construction'    , 2       , False        , True         , (150,120, 90) ),
     Label(  'pole'                 , 17 ,        4 , 'object'          , 3       , False        , False        , (153,153,153) ),
     Label(  'polegroup'            , 18 ,      255 , 'object'          , 3       , False        , True         , (153,153,153) ),
     Label(  'traffic light'        , 19 ,        5 , 'object'          , 3       , False        , False        , (250,170, 30) ),
-    Label(  'traffic sign'         , 20 ,      255 , 'object'          , 3       , False        , False        , (220,220,  0) ),
+    Label(  'traffic sign'         , 20 ,      15 , 'object'          , 3       , False        , False        , (220,220,  0) ),
     Label(  'vegetation'           , 21 ,        6 , 'nature'          , 4       , False        , False        , (107,142, 35) ),
     Label(  'terrain'              , 22 ,        7 , 'nature'          , 4       , False        , False        , (152,251,152) ),
     Label(  'sky'                  , 23 ,        8 , 'sky'             , 5       , False        , False        , ( 70,130,180) ),
-    Label(  'person'               , 24 ,      255 , 'human'           , 6       , True         , True         , (220, 20, 60) ),
+    Label(  'person'               , 24 ,      16 , 'human'           , 6       , True         , True         , (220, 20, 60) ),
     Label(  'rider'                , 25 ,      255 , 'human'           , 6       , True         , True         , (255,  0,  0) ),
-    Label(  'car'                  , 26 ,      255 , 'vehicle'         , 7       , True         , True         , (  0,  0,142) ),
+    Label(  'car'                  , 26 ,      17 , 'vehicle'         , 7       , True         , True         , (  0,  0,142) ),
     Label(  'truck'                , 27 ,        9 , 'vehicle'         , 7       , True         , False        , (  0,  0, 70) ),
     Label(  'bus'                  , 28 ,       10 , 'vehicle'         , 7       , True         , True        , (  0, 60,100) ),
     Label(  'caravan'              , 29 ,      255 , 'vehicle'         , 7       , True         , True         , (  0,  0, 90) ),
@@ -112,7 +112,9 @@ class Cityscapes(Dataset):
                  transform=None,
                  label_mapping=None,
                  pred_mapping=None,
-                 id_to_trainid = id_to_trainid
+                 id_to_trainid = id_to_trainid,
+                 trainid_to_id = trainid_to_id,
+                 trainid_to_color = trainid_to_color
                  ):
         """Load all filenames."""
         super(Cityscapes, self).__init__()
@@ -133,6 +135,8 @@ class Cityscapes(Dataset):
         self.targets = []
         self.map_fun = map_fun
         self.id_to_trainid = id_to_trainid
+        self.trainid_to_id = trainid_to_id
+        self.trainid_to_color = trainid_to_color
 
         for root, _, filenames in os.walk(os.path.join(self.root, 'leftImg8bit',
                                                        self.split)):

@@ -63,10 +63,8 @@ labels = [
     Label('vegetation', 21, 8, 'nature', 4, False, False, (107, 142, 35)),
     Label('terrain', 22, 9, 'nature', 4, False, False, (152, 251, 152)),
     Label('sky', 23, 10, 'sky', 5, False, False, (70, 130, 180)),
-    Label('person', 24, 17, 'human', 6, True, True, (255, 102, 0)),
-    Label('rider', 25, 17, 'human', 7, True, True, (255, 102, 0)),
-    Label('human', 201, 17, 'human', 7, True, True, (255, 102, 0)),
-    Label('human', 202, 17, 'human', 7, True, True, (255, 102, 0)),    
+    Label('person', 24, void_ind, 'human', 6, True, True, (255, 102, 0)),
+    Label('rider', 25, void_ind, 'human', 7, True, True, (255, 102, 0)),   
     Label('car', 26, 11, 'vehicle', 7, True, False, (0, 0, 142)),
     Label('truck', 27, 12, 'vehicle', 7, True, False, (0, 0, 70)),
     Label('bus', 28, 13, 'vehicle', 7, True, False, (0, 60, 100)),
@@ -79,8 +77,8 @@ labels = [
     Label('unlabeled', 0, void_ind, 'void', 0, False, True, (0, 0, 0))
 ]
 
-idnum = max([label.id for label in labels], default=0)
-trainidnum = max([(label.trainid if label.trainid != void_ind else 0) for label in labels], default=0)
+idnum = max([label.id for label in labels], default=0) 
+trainidnum = max([(label.trainid if label.trainid != void_ind else 0) for label in labels], default=0) 
 id_to_trainid = {label.id: label.trainid for label in labels}
 id_to_color = {label.id: label.color for label in labels}
 color_to_id = {label.color: label.id for label in labels}
@@ -114,8 +112,11 @@ class Cityscapes(Dataset):
                  transform=None,
                  label_mapping=None,
                  pred_mapping=None,
-                 id_to_trainid = id_to_trainid
-                 ):
+                 trainidnum = trainidnum,
+                 idnum = idnum,
+                 id_to_trainid = id_to_trainid,
+                 trainid_to_id = trainid_to_id,
+                 id_to_color = id_to_color):
         """Load all filenames."""
         super(Cityscapes, self).__init__()
         self.num = idnum
@@ -135,6 +136,8 @@ class Cityscapes(Dataset):
         self.targets = []
         self.map_fun = map_fun
         self.id_to_trainid = id_to_trainid
+        self.trainid_to_id = trainid_to_id
+        self.id_to_color = id_to_color
 
         for root, _, filenames in os.walk(os.path.join(self.root, 'leftImg8bit',
                                                        self.split)):
