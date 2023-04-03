@@ -16,18 +16,22 @@ from omegaconf import DictConfig
 import hydra
 
 class Train_Data(Dataset):
-    def __init__(self,
-                 dataset_root,
-                 data_dict,
-                 C,
-                 k,
+    def __init__(self, dataset_root, data_dict, 
+                 num_novel = 0,
                  label_root='./datasets/pseudo_label',
+                 memory_root = None,
+                 target_root=None,
                  id2trainid=None,
                  map_fun=None,
-                 transform=None, exp = None):
+                 transform=None, 
+                 num_classes = 19,
+                 exp = None):
         """Load all filenames."""
         super(Train_Data, self).__init__()
         self.label_root = os.path.join(label_root, exp)
+        self.target_root = target_root
+        self.memory_root = memory_root
+
         self.transform = transform
 
         self.dataset_root = dataset_root
@@ -36,16 +40,16 @@ class Train_Data(Dataset):
         self.targets = []
         self.map_fun = map_fun
         self.id2trainid = id2trainid
-        self.C = C
-        self.k = k
+        self.num_classes = num_classes
+        self.num_novel = num_novel
 
         for i, path in enumerate(self.data_dict['images']):
             self.images.append(os.path.join(self.dataset_root, path))
             self.targets.append(os.path.join(self.label_root, self.data_dict['targets'][i]))
    
         for i, path in enumerate(self.data_dict['memory_images']):
-            self.images.append(os.path.join(self.dataset_root, path))
-            self.targets.append(os.path.join(self.dataset_root, self.data_dict['memory_targets'][i]))
+            self.images.append(os.path.join(self.memory_root, path))
+            self.targets.append(os.path.join(self.target_root, self.data_dict['memory_targets'][i]))
             
 
     def __len__(self):
@@ -62,9 +66,9 @@ class Train_Data(Dataset):
 
         if self.map_fun is not None:
             if i < len(self.data_dict['images']):
-                target = self.map_fun(target, self.id2trainid, self.C + self.k)
+                target = self.map_fun(target, self.id2trainid, self.num_classes + self.num_novel)
             else:
-                target = self.map_fun(target, self.id2trainid, self.C)
+                target = self.map_fun(target, self.id2trainid, self.num_classes)
 
         return image, target
 
@@ -72,13 +76,15 @@ class Trainer():
 
     def __init__(self, cfg: DictConfig):
         self.max_epoch = cfg.max_epoch
-        self.k = cfg.experiments[cfg.experiment]['k']
-        self.C = cfg[cfg.experiments[cfg.experiment]['model']].num_classes
+        self.num_novel = cfg.experiments[cfg.experiment]['k']
+        self.num_classes = cfg[cfg.experiments[cfg.experiment]['model']].num_classes
         self.num_workers = cfg.num_workers
         self.bs = cfg.bs
         self.lam = cfg.lam
         self.ckpt = os.path.join(cfg.weight_dir, cfg.experiments[cfg.experiment]['init_weights'])
         self.model = cfg[cfg.experiments[cfg.experiment]['model']]
+        self.layers_ext = cfg.extended_layers[cfg.experiments[cfg.experiment]['model']]
+        self.layers_trainable = cfg.trainable_layers[cfg.experiments[cfg.experiment]['model']]
         self.seed = cfg.seeds[cfg.run]
         self.exp = cfg.experiment
         self.run = cfg.run
@@ -86,7 +92,8 @@ class Trainer():
         if not os.path.exists(self.save_ckpt[:-8]):
             os.makedirs(self.save_ckpt[:-8])
         self.dataset = hydra.utils.instantiate(cfg[cfg.experiments[cfg.experiment]['dataset']], cfg.experiments[cfg.experiment]['split'])
-        self.train_dataset = pkl.load(open(os.path.join(cfg.io_root, cfg.experiments[cfg.experiment]['dict']),'rb'))
+        self.dataset_train = hydra.utils.instantiate(cfg[cfg.experiments[cfg.experiment]['train_dataset']], cfg.experiments[cfg.experiment]['train_split'])
+        self.train_dataset = pkl.load(open(os.path.join('./datasets', cfg.experiments[cfg.experiment]['dict']),'rb'))
         self.sample_size = len(self.train_dataset['images']) + len(self.train_dataset['memory_images'])
 
     def loss_ce(self, inp, target, weight=None):
@@ -98,7 +105,7 @@ class Trainer():
         return output
 
     def loss_d(self, logits, target, T=1):
-        logits = logits[:, :-self.k, :, :]
+        logits = logits[:, :-self.num_novel, :, :]
         b, c, h, w = target.shape[0], target.shape[1], target.shape[2], target.shape[3]
         m = nn.Softmax(dim=1)
         M0 = m(target/T)
@@ -114,8 +121,8 @@ class Trainer():
         Calculate weights of the classes based on training crop (NVIDIA)
         """
         target = np.asarray(target).flatten()
-        hist = np.zeros(self.C + self.k)
-        for i in range(self.C + self.k):
+        hist = np.zeros(self.num_classes + self.num_novel)
+        for i in range(self.num_classes + self.num_novel):
             hist[i] = np.sum(target == i)/len(target)
         hist = hist*(1-hist)+1
         return torch.tensor(1/hist).float().cuda()
@@ -132,13 +139,13 @@ class Trainer():
         return remapped_target
 
     def prep_data(self):
-        trans = Compose([RandomHorizontalFlip(), RandomCrop(1000), ToTensor(), Normalize(self.dataset.mean, self.dataset.std)])
-        data = Train_Data(self.dataset.root, self.train_dataset, id2trainid=self.dataset.id_to_trainid, map_fun=self.fulltotrain, transform=trans, C = self.C, k = self.k, exp = self.exp)
+        trans = Compose([RandomHorizontalFlip(), RandomCrop(1000), ToTensor(), Normalize(self.dataset_train.mean, self.dataset_train.std)])
+        data = Train_Data(self.dataset.root, self.train_dataset, memory_root = self.dataset_train.root, target_root=self.dataset_train.target_root, id2trainid=self.dataset_train.id_to_trainid, map_fun=self.fulltotrain, transform=trans, num_classes = self.num_classes, num_novel = self.num_novel, exp = self.exp)
         datloader = DataLoader(data, batch_size=self.bs, shuffle=True, drop_last=True, num_workers=self.num_workers)
         return datloader
 
     def prep_distill_model(self):
-        model = hydra.utils.instantiate(self.model, num_classes = self.C)
+        model = hydra.utils.instantiate(self.model, num_classes = self.num_classes)
         network0 = nn.DataParallel(model)
         network0.load_state_dict(torch.load(self.ckpt)['state_dict'], strict=False)
         for param in network0.parameters():
@@ -148,32 +155,38 @@ class Trainer():
         return network0
     
     def prep_model(self):
-        dict = torch.load(self.ckpt)['state_dict']
-        weights_last_layer = torch.load(self.ckpt)['state_dict']['module.final.6.weight']
-        shape_last_layer = weights_last_layer.shape
-        new_weight = torch.rand((self.k, shape_last_layer[1], shape_last_layer[2], shape_last_layer[3]), requires_grad=True)
-        new_weight = (new_weight * np.sqrt(2 / shape_last_layer[1])).cuda()
-        new_weight = torch.cat((weights_last_layer, new_weight), dim=0)
-        del dict['module.final.6.weight']
-        dict.update({'module.final.6.weight': new_weight})
+        ckpt = torch.load(self.ckpt)
+        if 'state_dict' in ckpt.keys():
+            state_dict = ckpt['state_dict']
+        else:
+            state_dict = ckpt
 
-
-        network = hydra.utils.instantiate(self.model, num_classes = self.C+self.k)
-        network = nn.DataParallel(network)
-        network.load_state_dict(dict, strict=False)
+        for layer in self.layers_ext:
+            params = state_dict[layer]
+            if 'weight' in layer:
+                new = torch.rand((self.num_novel, params.shape[1], params.shape[2], params.shape[3]), requires_grad=True)
+                new = (new * np.sqrt(2 / params.shape[1])).cuda()
+                new = torch.cat((params, new), dim=0)
+            elif 'bias' in layer:
+                new = torch.rand(1, requires_grad=True).cuda()
+                new = torch.cat((params, new), dim=0)
+            del state_dict[layer]
+            state_dict.update({layer: new})
+    
+        network = hydra.utils.instantiate(self.model, num_classes = self.num_classes+self.num_novel)
+        if any('module' in key for key in state_dict.keys()):
+            network = nn.DataParallel(network)
+        network.load_state_dict(state_dict, strict=False)
         for param in network.parameters():
-            param.requires_grad = False
+            param.requires_grad = True
 
+        for name, param in network.named_parameters():
+            if not any(s in name for s in self.layers_trainable):
+                param.requires_grad = False
 
-        network.module.final[0].weight.requires_grad = True
-        network.module.final[1].weight.requires_grad = True
-        network.module.final[3].weight.requires_grad = True
-        network.module.final[4].weight.requires_grad = True
-        network.module.bot_fine.weight.requires_grad = True
-        network.module.bot_aspp.weight.requires_grad = True
-        network.module.final[6].weight.requires_grad = True
         network.cuda()
         network.train()
+
         optimizer = optim.Adam(network.parameters(), lr=5*1e-5, weight_decay=1e-4)
         scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=self.poly_schd)
         return network, optimizer, scheduler

@@ -24,3 +24,6 @@
 /psp_3.out
 /psp_4.out
 /run.sh
+/datasets
+/weights
+/weights.zip

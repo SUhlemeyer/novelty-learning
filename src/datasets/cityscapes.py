@@ -166,6 +166,7 @@ cityscapes_to_a2d2 = {
     32: 36,
     33: 1,
     34: 30,
+    202: 30,
     -1: a2d2_void
 }
 
@@ -267,6 +268,8 @@ class Cityscapes(Dataset):
         self.mean = (0.485, 0.456, 0.406)
         self.std = (0.229, 0.224, 0.225)
         self.root = root
+        self.target_root = root
+        self.memory_root = root
         self.split = split
         self.transform = transform
         self.label_mapping = label_mapping

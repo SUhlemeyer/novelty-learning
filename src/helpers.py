@@ -16,8 +16,14 @@ def init_segmentation_network(model, ckpt_path, num_classes):
     print("Checkpoint file:", ckpt_path)
     print("Load PyTorch model", end="", flush=True)
     network = hydra.utils.instantiate(model, num_classes=num_classes)
-    #network = nn.DataParallel(network)
-    network.load_state_dict(torch.load(ckpt_path)['state_dict'], strict=False)
+    ckpt = torch.load(ckpt_path)
+    if 'state_dict' in ckpt.keys():
+        state_dict = torch.load(ckpt_path)['state_dict']
+    else:
+        state_dict = torch.load(ckpt_path)
+    if any('module' in key for key in state_dict.keys()):
+        network = nn.DataParallel(network)
+    network.load_state_dict(state_dict, strict=False)
     network = network.cuda().eval()
     print("... ok")
     return network

@@ -127,6 +127,8 @@ class Cityscapes(Dataset):
         if label_mapping is None:
             label_mapping = discover_mapping
         self.root = root
+        self.target_root = root
+        self.memory_root = root
         self.split = split
         self.transform = transform
         self.label_mapping = label_mapping

@@ -205,6 +205,7 @@ class A2D2(data.Dataset):
 
         self.root = root
         self.split = split
+        self.target_root = os.path.join(self.root.replace('datasets', 'uhlemeyer'), 'labels_id', self.split)
         self.mean = (0.485, 0.456, 0.406)
         self.std = (0.229, 0.224, 0.225)
 
@@ -231,9 +232,9 @@ class A2D2(data.Dataset):
                     self.images.append(os.path.join(root, filename))
 
                     if self.split in ['train', 'val']:
-                        target_root = os.path.join(self.root,
-                                                   'labels_id', self.split)
-                        self.targets.append(os.path.join(target_root,
+                        # target_root = os.path.join(self.root,
+                        #                            'labels_id', self.split)
+                        self.targets.append(os.path.join(self.target_root,
                                                          filename))
 
         # create color matrix for indexing the class ids

@@ -27,11 +27,11 @@ class PPM(nn.Module):
 
 
 class PSPNet(nn.Module):
-    def __init__(self, classes, layers=50, bins=(1, 2, 3, 6), dropout=0.5, zoom_factor=8, use_ppm=True, criterion=nn.CrossEntropyLoss(ignore_index=255), pretrained=True):
+    def __init__(self, num_classes, layers=50, bins=(1, 2, 3, 6), dropout=0.5, zoom_factor=8, use_ppm=True, criterion=nn.CrossEntropyLoss(ignore_index=255), pretrained=True):
         super(PSPNet, self).__init__()
         assert layers in [50, 101, 152]
         assert 2048 % len(bins) == 0
-        assert classes > 1
+        assert num_classes > 1
         assert zoom_factor in [1, 2, 4, 8]
         self.zoom_factor = zoom_factor
         self.use_ppm = use_ppm
@@ -66,7 +66,7 @@ class PSPNet(nn.Module):
             nn.BatchNorm2d(512),
             nn.ReLU(inplace=True),
             nn.Dropout2d(p=dropout),
-            nn.Conv2d(512, classes, kernel_size=1)
+            nn.Conv2d(512, num_classes, kernel_size=1)
         )
         if self.training:
             self.aux = nn.Sequential(
@@ -74,7 +74,7 @@ class PSPNet(nn.Module):
                 nn.BatchNorm2d(256),
                 nn.ReLU(inplace=True),
                 nn.Dropout2d(p=dropout),
-                nn.Conv2d(256, classes, kernel_size=1)
+                nn.Conv2d(256, num_classes, kernel_size=1)
             )
 
     def forward(self, x, y=None):
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     import os
     os.environ["CUDA_VISIBLE_DEVICES"] = '0, 1'
     input = torch.rand(4, 3, 473, 473).cuda()
-    model = PSPNet(layers=50, bins=(1, 2, 3, 6), dropout=0.1, classes=21, zoom_factor=1, use_ppm=True, pretrained=True).cuda()
+    model = PSPNet(layers=50, bins=(1, 2, 3, 6), dropout=0.1, num_classes=21, zoom_factor=1, use_ppm=True, pretrained=True).cuda()
     model.eval()
     print(model)
     output = model(input)

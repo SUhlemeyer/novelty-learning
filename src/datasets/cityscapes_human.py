@@ -63,8 +63,8 @@ labels = [
     Label('vegetation', 21, 8, 'nature', 4, False, False, (107, 142, 35)),
     Label('terrain', 22, 9, 'nature', 4, False, False, (152, 251, 152)),
     Label('sky', 23, 10, 'sky', 5, False, False, (70, 130, 180)),
-    Label('person', 24, void_ind, 'human', 6, True, True, (255, 102, 0)),
-    Label('rider', 25, void_ind, 'human', 7, True, True, (255, 102, 0)),   
+    Label('person', 24, 17, 'human', 6, True, True, (255, 102, 0)),
+    Label('rider', 25, 17, 'human', 7, True, True, (255, 102, 0)),   
     Label('car', 26, 11, 'vehicle', 7, True, False, (0, 0, 142)),
     Label('truck', 27, 12, 'vehicle', 7, True, False, (0, 0, 70)),
     Label('bus', 28, 13, 'vehicle', 7, True, False, (0, 60, 100)),
@@ -128,6 +128,8 @@ class Cityscapes(Dataset):
         if label_mapping is None:
             label_mapping = discover_mapping
         self.root = root
+        self.target_root = root
+        self.memory_root = root
         self.split = split
         self.transform = transform
         self.label_mapping = label_mapping

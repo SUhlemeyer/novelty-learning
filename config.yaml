@@ -12,7 +12,6 @@ seeds:
 
 io_root: ./outputs
 weight_dir: ./weights
-dataset_dir: /home/datasets
 
 anom_threshold: 0.5
 
@@ -28,31 +27,31 @@ tasks:
   metaseg_test: False
   metaseg_visualize: False
   compute_embeddings: False
-  detect_clusters: True
+  detect_clusters: False
   extend_model: False
   infer_validation_data: False
 
 #### datasets
 cityscapes:
   _target_: src.datasets.cityscapes.Cityscapes
-  root: cityscapes
+  root: /home/datasets/cityscapes
 
 cityscapes_human:
   _target_: src.datasets.cityscapes_human.Cityscapes
-  root: cityscapes
+  root: /home/datasets/cityscapes
 
 cityscapes_bus:
   _target_: src.datasets.cityscapes_bus.Cityscapes
-  root:  cityscapes
+  root:  /home/datasets/cityscapes
 
 cityscapes_human_bus_car:
   _target_: src.datasets.cityscapes_human_bus_car.Cityscapes
-  root: cityscapes
+  root: /home/datasets/cityscapes
 
 
 a2d2:
   _target_: src.datasets.a2d2.A2D2
-  root: A2D2
+  root: /home/datasets/A2D2
 
 
 #### models
@@ -66,12 +65,10 @@ deeplabv3plus_2:
 
 deeplabv3plus_3a:
   _target_: src.models.deepv3.DeepWV3Plus
-  name: DeepLabv3plus
   num_classes: 19
 
 deeplabv3plus_4:
   _target_: src.models.deepv3.DeepWV3Plus
-  name: DeepLabv3plus
   num_classes: 19
 
 deeplabv3plus_5:
@@ -80,9 +77,23 @@ deeplabv3plus_5:
 
 pspnet_3b:
   _target_: src.models.pspnet.PSPNet
-  name: PSPNet
   num_classes: 19
 
+extended_layers:
+  deeplabv3plus_1: ['module.final.6.weight']
+  deeplabv3plus_2: ['module.final.6.weight']
+  deeplabv3plus_3a: ['module.final.6.weight']
+  deeplabv3plus_4: ['module.final.6.weight']
+  deeplabv3plus_5: ['module.final.6.weight']
+  pspnet_3b: ['module.cls.4.weight', 'module.cls.4.bias', 'module.aux.4.weight', 'module.aux.4.bias']
+
+trainable_layers:
+  deeplabv3plus_1: ['final', 'bot']
+  deeplabv3plus_2: ['final', 'bot']
+  deeplabv3plus_3a: ['final', 'bot']
+  deeplabv3plus_4: ['final', 'bot']
+  deeplabv3plus_5: ['final', 'bot']
+  pspnet_3b: ['cls', 'ppm']
 
 ### meta models
 gradient_boosting_1:
@@ -211,7 +222,7 @@ experiments:
   experiment4a:
     dataset: a2d2
     split: test
-    train_dataset: cityscapes
+    train_dataset: a2d2
     train_split: train
     dict: experiment4a_data.p
     model: deeplabv3plus_3a
@@ -223,7 +234,7 @@ experiments:
   experiment4b:
     dataset: a2d2
     split: test
-    train_dataset: cityscapes
+    train_dataset: a2d2
     train_split: train
     dict: experiment4b_data.p
     model: pspnet_3b
